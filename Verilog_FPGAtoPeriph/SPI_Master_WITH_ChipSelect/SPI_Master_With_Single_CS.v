@@ -38,7 +38,7 @@ module SPI_Master_With_Single_CS
     parameter MAX_BYTES_PER_CS = 2,
     parameter CS_INACTIVE_CLKS = 1)
   (
-   // Control/Data Signals,
+   // Control/Data Signals
    input        i_Rst_L,     // FPGA Reset
    input        i_Clk,       // FPGA Clock
    
@@ -53,7 +53,7 @@ module SPI_Master_With_Single_CS
    output       o_RX_DV,     // Data Valid pulse (1 clock cycle)
    output [7:0] o_RX_Byte,   // Byte received on MISO
 
-   // SPI Interface
+   // SPI Interface (Assigned to FPGA I/O pins)
    output o_SPI_Clk,
    input  i_SPI_MISO,
    output o_SPI_MOSI,
@@ -76,7 +76,7 @@ module SPI_Master_With_Single_CS
       .CLKS_PER_HALF_BIT(CLKS_PER_HALF_BIT)
       ) SPI_Master_Inst
    (
-   // Control/Data Signals,
+   // Control/Data Signals
    .i_Rst_L(i_Rst_L),     // FPGA Reset
    .i_Clk(i_Clk),         // FPGA Clock
    
