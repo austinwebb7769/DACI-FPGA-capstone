@@ -5,12 +5,12 @@ use IEEE.STD_LOGIC_UNSIGNED.ALL;
 
 entity UART_Tx is
     Port (
-        i_Clk    : in  STD_LOGIC;                    -- 50 MHz clock
-        i_Rst_L  : in  STD_LOGIC;                    -- reset
-        tx_start : in  STD_LOGIC;                    -- start transmission
-        tx_data  : in  STD_LOGIC_VECTOR(7 downto 0); -- 8-bit data
-        tx_busy  : out STD_LOGIC;                    -- busy flag
-        tx_serial: out STD_LOGIC                     -- UART serial output
+        i_Clk     : in  STD_LOGIC;                    -- 50 MHz clock
+        i_Rst_L   : in  STD_LOGIC;                    -- reset
+        tx_start  : in  STD_LOGIC;                    -- start transmission
+        tx_data   : in  STD_LOGIC_VECTOR(7 downto 0); -- 8-bit data
+        tx_busy   : out STD_LOGIC;                    -- busy flag
+        tx_serial : out STD_LOGIC                     -- UART serial output
     );
 end UART_Tx;
 
@@ -20,21 +20,24 @@ architecture Behavioral of UART_Tx is
     signal bit_counter    : integer := 0;
     signal tx_reg         : STD_LOGIC_VECTOR(9 downto 0); -- 1 start, 8 data, 1 stop
     signal tx_active      : STD_LOGIC := '0';
-
+    signal tx_busy_internal : STD_LOGIC := '0';           -- Internal signal for tx_busy
 begin
+    -- Drive the tx_busy port using the internal signal
+    tx_busy <= tx_busy_internal;
+
     process(i_Clk)
     begin
         if rising_edge(i_Clk) then
-            if i_Rst_L = '1' then
+            if i_Rst_L = '0' then
                 baud_counter <= 0;
                 bit_counter <= 0;
                 tx_serial <= '1';
-                tx_busy <= '0';
+                tx_busy_internal <= '0';
                 tx_active <= '0';
-            elsif tx_start = '1' and tx_busy = '0' then
+            elsif tx_start = '1' and tx_busy_internal = '0' then
                 -- Load data and start transmission
                 tx_reg <= '0' & tx_data & '1';                -- Start bit, data, stop bit
-                tx_busy <= '1';
+                tx_busy_internal <= '1';                     -- Set busy flag
                 tx_active <= '1';
                 baud_counter <= 0;
                 bit_counter <= 0;
@@ -47,7 +50,7 @@ begin
                     
                     -- Transmission complete
                     if bit_counter = 10 then
-                        tx_busy <= '0';
+                        tx_busy_internal <= '0';             -- Clear busy flag
                         tx_active <= '0';
                         bit_counter <= 0;
                         tx_serial <= '1';                    -- Idle high
@@ -59,4 +62,3 @@ begin
         end if;
     end process;
 end Behavioral;
-

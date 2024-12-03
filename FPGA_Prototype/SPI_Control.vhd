@@ -2,7 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity SPI_Controller is
+entity SPI_Control is
   port (
     i_Rst_L    : in  std_logic;                -- Reset (Active Low)
     i_Clk      : in  std_logic;                -- 50 MHz FPGA Clock
@@ -14,9 +14,9 @@ entity SPI_Controller is
     o_Data     : out std_logic_vector(7 downto 0); -- Data received
     o_Done     : out std_logic                 -- Transfer done signal
   );
-end entity SPI_Controller;
+end entity SPI_Control;
 
-architecture Behavioral of SPI_Controller is
+architecture Behavioral of SPI_Control is
 
   -- Constants and internal signals
   constant CLK_DIVIDER : integer := 16;         -- Adjust for SPI clock frequency
