@@ -24,7 +24,7 @@ architecture Behavioral of Shaft_Encoder is
     signal prev_A        : STD_LOGIC := '0';
     signal data_ready    : STD_LOGIC := '0';
 
-    constant CYCLE_LIMIT : INTEGER := 1000;--00; -- 2ms at 50 MHz
+    constant CYCLE_LIMIT : INTEGER := 100000; -- 2ms at 50 MHz
 
 begin
 
