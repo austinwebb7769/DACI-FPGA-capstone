@@ -1,92 +1,160 @@
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
 
 entity SPI_Control is
-  port (
-    i_Rst_L    : in  std_logic;                -- Reset (Active Low)
-    i_Clk      : in  std_logic;                -- 50 MHz FPGA Clock
-    o_SPI_SCLK : out std_logic;                -- SPI Clock (SCLK)
-    o_SPI_MOSI : out std_logic;                -- Master Out Slave In (MOSI)
-    i_SPI_MISO : in  std_logic;                -- Master In Slave Out (MISO)
-    o_SPI_SS   : out std_logic_vector(4 downto 0); -- Slave Select (5 slaves, active low)
-    i_Data     : in  std_logic_vector(7 downto 0); -- Data to transmit
-    o_Data     : out std_logic_vector(7 downto 0); -- Data received
-    o_Done     : out std_logic                 -- Transfer done signal
-  );
-end entity SPI_Control;
+    port (
+        i_Clk       : in  std_logic;
+        i_Reset     : in  std_logic;
+        i_START     : in  std_logic;
+
+        i_BUSY      : in  std_logic;
+        i_DOUTA_1   : in  std_logic;
+        i_DOUTA_2   : in  std_logic;
+
+        o_SCLK      : out std_logic;
+        o_CONVST    : out std_logic;
+        o_CS        : out std_logic_vector(1 downto 0); -- CS(0) = ADC1, CS(1) = ADC2
+
+        o_Data1     : out std_logic_vector(127 downto 0);
+        o_Data2     : out std_logic_vector(127 downto 0);
+        o_Done      : out std_logic
+    );
+end SPI_Control;
 
 architecture Behavioral of SPI_Control is
 
-  -- Constants and internal signals
-  constant CLK_DIVIDER : integer := 16;         -- Adjust for SPI clock frequency
-  signal clk_div_count : integer range 0 to CLK_DIVIDER - 1 := 0;
-  signal spi_clk       : std_logic := '0';      -- SPI clock signal
-  signal bit_counter   : integer range 0 to 7 := 0; -- Tracks transmitted bits
-  signal slave_index   : integer range 0 to 4 := 0; -- Tracks active slave
-  signal cycle_count   : integer range 0 to 127 := 0; -- Tracks SPI cycles
-  signal transmit_data : std_logic_vector(7 downto 0) := (others => '0');
-  signal received_data : std_logic_vector(7 downto 0) := (others => '0');
-  signal ss_signals    : std_logic_vector(4 downto 0) := (others => '1'); -- All slaves inactive by default
+    type t_State is (
+        IDLE, CONVERT_START, WAIT_BUSY_HIGH, WAIT_BUSY_LOW,
+        READ_ADC1, READ_ADC2, DONE
+    );
+    signal r_State : t_State := IDLE;
+
+    signal r_CONVST      : std_logic := '1';
+    signal r_CS          : std_logic_vector(1 downto 0) := (others => '1');
+    signal r_SCLK        : std_logic := '0';
+    signal r_SCLK_prev   : std_logic := '0';
+
+    signal clk_div       : integer := 0;
+    constant CLK_DIV_MAX : integer := 4; -- Adjust for simulation speed if needed
+
+    signal bit_index     : integer range 0 to 127 := 0;
+    signal r_Data1       : std_logic_vector(127 downto 0) := (others => '0');
+    signal r_Data2       : std_logic_vector(127 downto 0) := (others => '0');
+    signal r_Done        : std_logic := '0';
+
+    signal sclk_enable   : std_logic := '0';
 
 begin
 
-  -- Clock divider process for SPI clock
-  process(i_Clk, i_Rst_L)
-  begin
-    if i_Rst_L = '0' then
-      clk_div_count <= 0;
-      spi_clk <= '0';
-    elsif rising_edge(i_Clk) then
-      if clk_div_count = CLK_DIVIDER - 1 then
-        spi_clk <= not spi_clk;
-        clk_div_count <= 0;
-      else
-        clk_div_count <= clk_div_count + 1;
-      end if;
-    end if;
-  end process;
+    -- Output assignments
+    o_CONVST <= r_CONVST;
+    o_CS     <= r_CS;
+    o_SCLK   <= r_SCLK;
+    o_Data1  <= r_Data1;
+    o_Data2  <= r_Data2;
+    o_Done   <= r_Done;
 
-  o_SPI_SCLK <= spi_clk;
-
-  -- SPI Master logic
-  process(spi_clk, i_Rst_L)
-  begin
-    if i_Rst_L = '0' then
-      bit_counter <= 0;
-      cycle_count <= 0;
-      slave_index <= 0;
-      ss_signals <= (others => '1'); -- Deactivate all slaves
-      received_data <= (others => '0');
-      o_Done <= '0';
-    elsif rising_edge(spi_clk) then
-      -- Begin SPI transaction
-      if bit_counter < 8 then
-        -- Transmit and receive data bit-by-bit
-        o_SPI_MOSI <= transmit_data(7 - bit_counter); -- MSB first
-        received_data(7 - bit_counter) <= i_SPI_MISO; -- Capture MISO
-        bit_counter <= bit_counter + 1;
-        o_Done <= '0';
-      else
-        -- End of 8-bit transaction
-        bit_counter <= 0;
-        o_Done <= '1';
-
-        -- Increment cycle counter and switch slaves after 128 cycles
-        if cycle_count = 127 then
-          cycle_count <= 0;
-          slave_index <= (slave_index + 1) mod 5; -- Cycle through slaves 0-4
-          ss_signals <= (others => '1'); -- Deactivate all slaves
-          ss_signals(slave_index) <= '0'; -- Activate current slave
-        else
-          cycle_count <= cycle_count + 1;
+    -- SCLK generation
+    process(i_Clk)
+    begin
+        if rising_edge(i_Clk) then
+            if sclk_enable = '1' then
+                if clk_div = CLK_DIV_MAX then
+                    r_SCLK <= not r_SCLK;
+                    clk_div <= 0;
+                else
+                    clk_div <= clk_div + 1;
+                end if;
+            else
+                r_SCLK <= '0';
+                clk_div <= 0;
+            end if;
         end if;
-      end if;
-    end if;
-  end process;
+    end process;
 
-  -- Assign outputs
-  o_SPI_SS <= ss_signals;
-  o_Data <= received_data;
+    -- FSM
+    process(i_Clk)
+    begin
+        if rising_edge(i_Clk) then
+            r_SCLK_prev <= r_SCLK;
+
+            if i_Reset = '1' then
+                r_State     <= IDLE;
+                r_CONVST    <= '1';
+                r_CS        <= (others => '1');
+                r_Done      <= '0';
+                sclk_enable <= '0';
+                bit_index   <= 0;
+                r_Data1     <= (others => '0');
+                r_Data2     <= (others => '0');
+                r_SCLK_prev <= '0';
+            else
+                case r_State is
+
+                    when IDLE =>
+                        r_Done <= '0';
+                        if i_START = '1' then
+                            r_CONVST <= '0';
+                            r_State  <= CONVERT_START;
+                        end if;
+
+                    when CONVERT_START =>
+                        r_CONVST <= '1';
+                        if i_BUSY = '1' then
+                            r_State <= WAIT_BUSY_LOW;
+                        else
+                            r_State <= WAIT_BUSY_HIGH;
+                        end if;
+
+                    when WAIT_BUSY_HIGH =>
+                        if i_BUSY = '1' then
+                            r_State <= WAIT_BUSY_LOW;
+                        end if;
+
+                    when WAIT_BUSY_LOW =>
+                        if i_BUSY = '0' then
+                            r_CS(0) <= '0'; -- Select ADC1
+                            r_CS(1) <= '1';
+                            bit_index <= 0;
+                            sclk_enable <= '1';
+                            r_State <= READ_ADC1;
+                        end if;
+
+                    when READ_ADC1 =>
+                        if r_SCLK = '1' and r_SCLK_prev = '0' then
+                            r_Data1(127 - bit_index) <= i_DOUTA_1;
+                            if bit_index = 127 then
+                                r_CS(0) <= '1';
+                                r_CS(1) <= '0'; -- Select ADC2
+                                bit_index <= 0;
+                                r_State <= READ_ADC2;
+                            else
+                                bit_index <= bit_index + 1;
+                            end if;
+                        end if;
+
+                    when READ_ADC2 =>
+                        if r_SCLK = '1' and r_SCLK_prev = '0' then
+                            r_Data2(127 - bit_index) <= i_DOUTA_2;
+                            if bit_index = 127 then
+                                sclk_enable <= '0';
+                                r_CS <= (others => '1');
+                                r_State <= DONE;
+                            else
+                                bit_index <= bit_index + 1;
+                            end if;
+                        end if;
+
+                    when DONE =>
+                        r_Done <= '1';
+                        r_State <= IDLE;
+
+                    when others =>
+                        r_State <= IDLE;
+                end case;
+            end if;
+        end if;
+    end process;
 
 end Behavioral;
