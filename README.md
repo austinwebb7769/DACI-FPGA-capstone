@@ -15,4 +15,8 @@ This specific GitHub Repository will be utilized in the development of VHDL to b
 
 ![Screenshot_DE10_Lite_FPGA](https://github.com/user-attachments/assets/ea1ff969-d5d5-4df2-aae3-5566f7dc1034)
 
+<p> align="center" width="100%">
+    <img width="33%" src="https://github.com/user-attachments/assets/ea1ff969-d5d5-4df2-aae3-5566f7dc1034">
+</p>
+
 I have also included a hyperlink to a testbench playground that will allow a view of the waveforms with the testbench I created to test the full functionality of the VHDL code for the purpose of this capstone project: https://www.edaplayground.com/x/mWM3.
