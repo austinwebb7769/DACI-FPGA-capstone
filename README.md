@@ -13,8 +13,6 @@ The proposed data acquisition system to be developed has a budgeted cost of 400 
 
 This specific GitHub Repository will be utilized in the development of VHDL to be utilized with the DE-10 Lite FPGA Development Kit. Currently, the FPGA_Prototype section contains the VHDL code that the DE-10 Lite FPGA is programmed with to effectively capture data and send it via a UART chip to the C++ developed software to display the captured data. The Verilog_FPGAtoPeriph section will contain similar code that may be used if the project might want to be completed in the Verilog language.
 
-![Screenshot_DE10_Lite_FPGA]
-
 <p align="center" width="100%">
     <img width="50%" src="https://github.com/user-attachments/assets/ea1ff969-d5d5-4df2-aae3-5566f7dc1034">
 </p>
