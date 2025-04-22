@@ -9,7 +9,7 @@ The software component seeks to implement a custom user interface developed in C
 
 The interdisciplinary nature of this project draws from electrical engineering, computer engineering, and software development. By bridging the gap between traditional, expensive data acquisition systems and modern, affordable alternatives, the team aims to provide a flexible and scalable solution for educational institutions and laboratories. The system’s modular design allows for future expansion, ensuring that it can evolve alongside emerging technological needs.
 
-The proposed data acquisition system to be developed has a budgeted cost of 400 dollars with the addition of a donated De-10 LITE FPGA board. This budget includes all required printed circuit boards, sensors for measurement, analog to digital converters, and miscellaneous connected breakout circuitry required elements. This cost will greatly decrease the overall cost of the systems compared to the current LabVolt system which has a base cost of 1500 dollars with the additional cost for licensing. Development of the project remained within this allotted budget.
+The proposed data acquisition system to be developed has a budgeted cost of 400 dollars with the addition of a donated DE-10 LITE FPGA board. This budget includes all required printed circuit boards, sensors for measurement, analog to digital converters, and miscellaneous connected breakout circuitry required elements. This cost will greatly decrease the overall cost of the systems compared to the current LabVolt system which has a minimum base cost of 4,212 dollars with the additional cost for licensing. Development of the project remained within this allotted budget.
 
 This specific GitHub Repository will be utilized in the development of VHDL to be utilized with the DE-10 Lite FPGA Development Kit. Currently, the FPGA_Prototype section contains the VHDL code that the DE-10 Lite FPGA is programmed with to effectively capture data and send it via a UART chip to the C++ developed software to display the captured data. The Verilog_FPGAtoPeriph section will contain similar code that may be used if the project might want to be completed in the Verilog language.
 
@@ -23,6 +23,7 @@ I have also included the results of a testbench playground and the hyperlink to 
     <img width="50%" src="https://github.com/user-attachments/assets/e27f1b01-5d64-460c-bf1d-454d50eea0fd">
 </p>
 
+Please feel free to experiment with this playground! The VHDL code is most definitely a work-in-progress. Also, please feel free to utilize this GitHub for learning, experiments, or other types of testing.
 
 
 
